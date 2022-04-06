@@ -9,20 +9,51 @@ app.use(cors());
 
 const users = [];
 
-function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+function checksExistsUserAccount(req, res, next) {
+  const { username } = req.headers;
+  const currentUser = users.find(user => user.username === username);
+  
+  if (!currentUser) return res.status(404).json({ error: 'User not found!'});
+
+  req.user = currentUser;
+  return next();
 }
 
-function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+function checksCreateTodosUserAvailability(req, res, next) {
+  const { user } = req;
+  if (user.pro) return next();
+  if (user.todos.length < 10) return next();
+
+  return res.status(403).json({ error: 'Maximum to do\'s with free plan exceeded' })
 }
 
-function checksTodoExists(request, response, next) {
-  // Complete aqui
+function checksTodoExists(req, res, next) {
+  const { id } = req.params;
+  const { username } = req.headers;
+  
+  if (!validate(id)) return res.status(400).json({ error: 'Id bad format!'});
+
+  const currentUser = users.find(user => user.username === username);
+  if (!currentUser) return res.status(404).json({ error: 'User not found!'});
+  
+  const currentTodo = currentUser.todos.find(todo => todo.id === id);
+  if (!currentTodo) return res.status(404).json({ error: 'Todo not found!' });
+
+  req.user = currentUser;
+  req.todo = currentTodo;
+  return next();
 }
 
-function findUserById(request, response, next) {
-  // Complete aqui
+function findUserById(req, res, next) {
+  const { id } = req.params;
+  if (!validate(id)) return res.status(400).json({ error: 'Id bad format!'});
+  
+  const currentUser = users.find(user => user.id === id)
+
+  if (!currentUser) return res.status(404).json({ error: 'User not found!' });
+
+  req.user = currentUser;
+  return next();
 }
 
 app.post('/users', (request, response) => {
